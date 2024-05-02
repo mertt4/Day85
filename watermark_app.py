@@ -9,6 +9,13 @@ class WatermarkApp(tk.Tk):
         self.title("Watermark App")
         self.geometry('900x600')
 
+        # Set dark color scheme
+        self.configure(bg='#222831')  # Dark gray background for the window
+        self.label_fg_color = '#76ABAE'  # White text color for labels
+        self.button_bg_color = '#31363F'  # Dark gray background for buttons
+        self.button_fg_color = '#EEEEEE'  # White text color for buttons
+        self.text_bg_color = '#31363F'  # Dark gray background for text entry
+
         self.image_path = None
         self.watermark_text = ""
         self.current_image = None  # Global variable to store the loaded image
@@ -16,28 +23,32 @@ class WatermarkApp(tk.Tk):
         self.create_widgets()
 
     def create_widgets(self):
-        self.img_frame = tk.Frame(self, width=500, height=500)
+        self.img_frame = tk.Frame(self, width=500, height=500, bg=self.button_bg_color)
         self.img_frame.grid(row=1, column=2, rowspan=5, padx=10)
 
-        self.title_label = tk.Label(self, text="Custom Text Watermark App", font=("Arial", 16, "bold"))
+        self.title_label = tk.Label(self, text="Custom Text Watermark App", font=("Arial", 16, "bold"), bg=self['bg'],
+                                    fg=self.label_fg_color)
         self.title_label.grid(row=0, column=0, columnspan=2, padx=5, pady=5)
 
-        self.img_select_button = tk.Button(self, text='Select Image', command=self.open_img_file)
+        self.img_select_button = tk.Button(self, text='Select Image', command=self.open_img_file,
+                                           bg=self.button_bg_color, fg=self.button_fg_color)
         self.img_select_button.grid(row=1, column=0, padx=5, pady=5)
 
-        self.empty_label = tk.Label(self, text="")
+        self.empty_label = tk.Label(self, text="", bg=self['bg'])
         self.empty_label.grid(row=1, column=1)
 
-        self.watermark_text_entry = tk.Text(self, height=15, width=15)
+        self.watermark_text_entry = tk.Text(self, height=15, width=15, bg=self.text_bg_color, fg=self.label_fg_color)
         self.watermark_text_entry.grid(row=2, column=0, padx=5, pady=5)
 
-        self.apply_text_button = tk.Button(self, text="Apply", command=self.apply_text)
+        self.apply_text_button = tk.Button(self, text="Apply", command=self.apply_text,
+                                           bg=self.button_bg_color, fg=self.button_fg_color)
         self.apply_text_button.grid(row=3, column=0, padx=5, pady=5)
 
-        self.save_img_button = tk.Button(self, text='Save Image', command=self.save_img_file)
+        self.save_img_button = tk.Button(self, text='Save Image', command=self.save_img_file,
+                                         bg=self.button_bg_color, fg=self.button_fg_color)
         self.save_img_button.grid(row=4, column=0, padx=5, pady=5)
 
-        self.img_label = tk.Label(self.img_frame)
+        self.img_label = tk.Label(self.img_frame, bg=self.button_bg_color)
         self.img_label.pack()
 
     def watermark(self, font):
