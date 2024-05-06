@@ -45,6 +45,8 @@ class WatermarkApp(tk.Tk):
         # gets files out of the fonts directory and lists them
         self.font_file_list = self.get_font_file_list()
 
+        self.font_size = 30  # Default font size
+
         self.create_widgets()
 
     def get_font_file_list(self):
@@ -87,20 +89,33 @@ class WatermarkApp(tk.Tk):
         self.img_label = tk.Label(self.img_frame, bg=self.button_bg_color)
         self.img_label.pack()
 
+        self.font_size_label = tk.Label(self, text="Font Size:", bg=self['bg'], fg=self.label_fg_color)
+        self.font_size_label.grid(row=6, column=0, padx=5, pady=5)
+
+        self.font_size_entry = tk.Entry(self, bg=self.text_bg_color, fg=self.label_fg_color)
+        self.font_size_entry.grid(row=6, column=1, padx=5, pady=5)
+        self.font_size_entry.insert(0, str(self.font_size))  # Set default font size in the entry
+
     def watermark(self, selected_font):
         if self.image_path is None:
             messagebox.showerror("Error", "No image loaded.")
             return
 
-        # new_font = selected_font.lower() + '.ttf'
-        # font_path = f"fonts/{new_font}"
-        # chosen_font = ImageFont.truetype(font_path, 30)
+        try:
+            font_size = int(self.font_size_entry.get())
+        except ValueError:
+            messagebox.showerror("Error", "Invalid font size. please enter a valid integer.")
+            return
+
+        if font_size <= 0:
+            messagebox.showerror("Error", "Font size must be greater than zero.")
+            return
 
         chosen_font_name = FONT_MAPPING.get(selected_font.lower())
         print(f"Chosen font name: {chosen_font_name}")
         if chosen_font_name:
             try:
-                chosen_font = ImageFont.truetype(chosen_font_name, 30)
+                chosen_font = ImageFont.truetype(chosen_font_name, self.font_size)
             except OSError:
                 messagebox.showerror("Error", f"Font '{chosen_font_name}' not available.")
                 return
@@ -166,6 +181,16 @@ class WatermarkApp(tk.Tk):
         if self.watermark_text:
             selected_font_name = self.selected_font.get()
             print(f"applied font name: {selected_font_name}")
+            try:
+                new_font_size = int(self.font_size_entry.get())
+                if new_font_size <= 0:
+                    messagebox.showerror("Error", "Font size must be greater than zero")
+                    return
+                self.font_size = new_font_size
+            except ValueError:
+                messagebox.showerror("Error", "Invalid font size. Please enter a valid integer.")
+                return
+
             if selected_font_name:
                 try:
                     self.watermark(selected_font_name)
