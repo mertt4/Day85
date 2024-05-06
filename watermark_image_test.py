@@ -1,42 +1,40 @@
-# import all the libraries
-from PIL import Image
-from PIL import ImageFont
-from PIL import ImageDraw
-import matplotlib.pyplot as plt
-import numpy as np
+from tkinter import *
+from tkinter import font
 
-# image opening
-image = Image.open("puppy.jpg")
-# this open the photo viewer
-image.show()
-plt.imshow(image)
+root = Tk()
+root.geometry('500x500')
 
-# text Watermark
-watermark_image = image.copy()
 
-draw = ImageDraw.Draw(watermark_image)
-# ("font type",font size)
-w, h = image.size
-x, y = int(w / 2), int(h / 2)
-if x > y:
-    font_size = y
-elif y > x:
-    font_size = x
-else:
-    font_size = x
+# Create Font_Chooser function
+def font_chooser(e):
+    our_font.config(family=my_listbox.get(my_listbox.curselection()))
 
-font = ImageFont.truetype("arial.ttf", int(font_size / 6))
 
-# add Watermark
-# (0,0,0)-black color text
-draw.text((x, y), "puppy", fill=(0, 0, 0), font=font, anchor='ms')
-plt.subplot(1, 2, 1)
-plt.title("black text")
-plt.imshow(watermark_image)
+# Designate our Font
+our_font = font.Font(family="Arial", size=30)
 
-# add Watermark
-# (255,255,255)-White color text
-draw.text((x, y), "puppy", fill=(255, 255, 255), font=font, anchor='ms')
-plt.subplot(1, 2, 2)
-plt.title("white text")
-plt.imshow(watermark_image)
+# Add Frame
+my_frame = Frame(root, width=480, height=275)
+my_frame.pack(pady=10)
+# Freeze frame in place
+my_frame.grid_propagate(False)
+my_frame.columnconfigure(0, weight=1)
+
+# Add Text Box
+my_text = Text(my_frame, font=our_font)
+my_text.grid(row=0, column=0)
+my_text.grid_rowconfigure(0, weight=1)
+my_text.grid_columnconfigure(0, weight=1)
+
+# Add listbox
+my_listbox = Listbox(root, selectmode=SINGLE, width=80)
+my_listbox.pack()
+
+# Add Font Families to Listbox
+for f in font.families():
+    my_listbox.insert('end', f)
+
+# Bind the listbox
+my_listbox.bind('<ButtonRelease-1>', font_chooser)
+
+root.mainloop()
