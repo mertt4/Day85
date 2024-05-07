@@ -1,4 +1,4 @@
-from PIL import Image, ImageTk, ImageFont, ImageDraw
+from PIL import Image, ImageTk, ImageFont, ImageDraw, ImageEnhance
 import tkinter as tk
 from tkinter import filedialog, messagebox, font
 import os  # Import the os module to handle file paths
@@ -46,6 +46,7 @@ class WatermarkApp(tk.Tk):
         self.font_file_list = self.get_font_file_list()
 
         self.font_size = 30  # Default font size
+        self.font_opacity = 0.6  # Default Opacity
 
         self.create_widgets()
 
@@ -96,6 +97,13 @@ class WatermarkApp(tk.Tk):
         self.font_size_entry.grid(row=6, column=1, padx=5, pady=5)
         self.font_size_entry.insert(0, str(self.font_size))  # Set default font size in the entry
 
+        self.font_opacity_label = tk.Label(self, text="Opacity:", bg=self['bg'], fg=self.label_fg_color)
+        self.font_opacity_label.grid(row=7, column=0, padx=5, pady=5)
+
+        self.font_opacity_entry = tk.Entry(self, bg=self.text_bg_color, fg=self.label_fg_color)
+        self.font_opacity_entry.grid(row=7, column=1, padx=5, pady=5)
+        self.font_opacity_entry.insert(0, str(self.font_opacity))  # Set default opacity in the entry
+
     def watermark(self, selected_font):
         if self.image_path is None:
             messagebox.showerror("Error", "No image loaded.")
@@ -104,7 +112,7 @@ class WatermarkApp(tk.Tk):
         try:
             font_size = int(self.font_size_entry.get())
         except ValueError:
-            messagebox.showerror("Error", "Invalid font size. please enter a valid integer.")
+            messagebox.showerror("Error", "Invalid font size. Please enter a valid integer.")
             return
 
         if font_size <= 0:
@@ -115,7 +123,7 @@ class WatermarkApp(tk.Tk):
         print(f"Chosen font name: {chosen_font_name}")
         if chosen_font_name:
             try:
-                chosen_font = ImageFont.truetype(chosen_font_name, self.font_size)
+                chosen_font = ImageFont.truetype(chosen_font_name, font_size)
             except OSError:
                 messagebox.showerror("Error", f"Font '{chosen_font_name}' not available.")
                 return
@@ -123,7 +131,7 @@ class WatermarkApp(tk.Tk):
             messagebox.showerror("Error", f"Font '{selected_font}' not supported.")
             return
 
-        image = Image.open(self.image_path)
+        image = Image.open(self.image_path).convert("RGBA")  # Convert to RGBA mode
         image.thumbnail((500, 500))
         draw = ImageDraw.Draw(image)
 
@@ -135,7 +143,19 @@ class WatermarkApp(tk.Tk):
         x = (image_width - text_width) // 2
         y = (image_height - text_height) // 2
 
-        draw.text((x, y), self.watermark_text, fill=(255, 255, 255, 128), font=chosen_font)
+        # Convert opacity value to alpha value (0-255)
+        opacity = int(float(self.font_opacity_entry.get()) * 255)
+        text_color = (255, 255, 255, opacity)  # Set text color with adjusted alpha
+
+        # Create a new image with the same size and format as the original image
+        txt_img = Image.new("RGBA", image.size, (255, 255, 255, 0))
+        txt_draw = ImageDraw.Draw(txt_img)
+
+        # Draw the text on the new image with the adjusted alpha value
+        txt_draw.text((x, y), self.watermark_text, fill=text_color, font=chosen_font)
+
+        # Blend the text image with the original image using alpha compositing
+        image = Image.alpha_composite(image, txt_img)
 
         self.current_image = image.copy()
 
@@ -187,6 +207,11 @@ class WatermarkApp(tk.Tk):
                     messagebox.showerror("Error", "Font size must be greater than zero")
                     return
                 self.font_size = new_font_size
+
+                # Print the opacity value
+                opacity_value = self.font_opacity_entry.get()
+                print(f"Opacity Value: {opacity_value}")
+
             except ValueError:
                 messagebox.showerror("Error", "Invalid font size. Please enter a valid integer.")
                 return
@@ -203,7 +228,7 @@ class WatermarkApp(tk.Tk):
             messagebox.showwarning("Warning", "Please enter text for watermark.")
 
     def load_image(self, file_path):
-        image = Image.open(file_path)
+        image = Image.open(file_path).convert("RGBA")  # Convert the image to RGBA mode
         image.thumbnail((500, 500))
         self.current_image = image.copy()
         photo = ImageTk.PhotoImage(image)
