@@ -1,7 +1,9 @@
-from PIL import Image, ImageTk, ImageFont, ImageDraw, ImageEnhance
+from PIL import Image, ImageTk, ImageFont, ImageDraw
 import tkinter as tk
 from tkinter import filedialog, messagebox, font
 import os  # Import the os module to handle file paths
+import tkinter.colorchooser as colorchooser
+
 
 FONT_MAPPING = {"arial": "arial", "bahnschrift": "bahnschrift", "calibri": "calibri", "candara": "Candara",
                 "centaur": "CENTAUR", "century": "CENTURY", "chiller": "CHILLER", "corbel": "corbel",
@@ -47,6 +49,7 @@ class WatermarkApp(tk.Tk):
 
         self.font_size = 30  # Default font size
         self.font_opacity = 0.6  # Default Opacity
+        self.selected_font_color = "#FFFFFF"  # Default font color (white)
 
         self.create_widgets()
 
@@ -104,6 +107,19 @@ class WatermarkApp(tk.Tk):
         self.font_opacity_entry.grid(row=7, column=1, padx=5, pady=5)
         self.font_opacity_entry.insert(0, str(self.font_opacity))  # Set default opacity in the entry
 
+        self.font_color_label = tk.Label(self, text="Font Color:", bg=self['bg'], fg=self.label_fg_color)
+        self.font_color_label.grid(row=8, column=0, padx=5, pady=5)
+
+        self.font_color_button = tk.Button(self, text="Select Color", command=self.select_font_color,
+                                           bg=self.button_bg_color, fg=self.button_fg_color)
+        self.font_color_button.grid(row=8, column=1, padx=5, pady=5)
+
+    def select_font_color(self):
+        color = colorchooser.askcolor(title="Select Font Color")[1]  # Get the selected color
+        if color:
+            self.font_color_button.config(bg=color)  # Update the button color to show the color selected
+            self.selected_font_color = color
+
     def watermark(self, selected_font):
         if self.image_path is None:
             messagebox.showerror("Error", "No image loaded.")
@@ -145,7 +161,7 @@ class WatermarkApp(tk.Tk):
 
         # Convert opacity value to alpha value (0-255)
         opacity = int(float(self.font_opacity_entry.get()) * 255)
-        text_color = (255, 255, 255, opacity)  # Set text color with adjusted alpha
+        text_color = tuple(int(self.selected_font_color.lstrip('#')[i:i + 2], 16) for i in (0, 2, 4)) + (opacity,)
 
         # Create a new image with the same size and format as the original image
         txt_img = Image.new("RGBA", image.size, (255, 255, 255, 0))
