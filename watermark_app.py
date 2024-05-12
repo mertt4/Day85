@@ -144,13 +144,24 @@ class WatermarkApp(tk.Tk):
         self.move_increment_entry.grid(row=10, column=1, padx=5, pady=5)
         self.move_increment_entry.insert(0, self.movement_increment)
 
+        self.rotation_label = tk.Label(self, text="Rotation Angle:", bg=self['bg'], fg=self.label_fg_color)
+        self.rotation_label.grid(row=11, column=0, padx=5, pady=5)
+
+        self.rotation_entry = tk.Entry(self, bg=self.text_bg_color, fg=self.label_fg_color)
+        self.rotation_entry.grid(row=11, column=1, padx=5, pady=5)
+        self.rotation_entry.insert(0, 0)
+
+        self.rotate_button = tk.Button(self, text="Rotate", command=self.rotate_clockwise,
+                                          bg=self.button_bg_color, fg=self.button_fg_color)
+        self.rotate_button.grid(row=11, column=2, padx=5, pady=5)
+
     def select_font_color(self):
         color = colorchooser.askcolor(title="Select Font Color")[1]  # Get the selected color
         if color:
             self.font_color_button.config(bg=color)  # Update the button color to show the color selected
             self.selected_font_color = color
 
-    def watermark(self, selected_font, x, y):
+    def watermark(self, selected_font, x, y, rotation_angle):
         if self.image_path is None:
             messagebox.showerror("Error", "No image loaded.")
             return
@@ -198,9 +209,23 @@ class WatermarkApp(tk.Tk):
 
         # Draw the text on the new image with the adjusted alpha value
         txt_draw.text((x_final, y_final), self.watermark_text, fill=text_color, font=chosen_font)
+        rotated_txt_img = txt_img.rotate(rotation_angle, expand=True)  # Rotate the text image
+
+        # Before compositing
+        print("Image Size:", image.size, "Image Mode:", image.mode)
+        print("Rotated Text Size:", rotated_txt_img.size, "Rotated Text Mode:", rotated_txt_img.mode)
 
         # Blend the text image with the original image using alpha compositing
-        image = Image.alpha_composite(image, txt_img)
+
+        # Assuming rotated_txt_img is the rotated text image
+        # Resize rotated_txt_img to match the size of image
+        rotated_txt_img = rotated_txt_img.resize(image.size, Image.Resampling.LANCZOS)
+
+        # Now perform alpha compositing with the resized rotated_txt_img
+        image = Image.alpha_composite(image, rotated_txt_img)
+
+        # After compositing
+        print("Composited Image Size:", image.size, "Composited Image Mode:", image.mode)
 
         self.current_image = image.copy()
 
@@ -235,16 +260,23 @@ class WatermarkApp(tk.Tk):
         )
         if file_path:
             try:
-                with open(file_path, "wb") as file:
-                    self.current_image.save(file, "JPEG")
+                # Convert the image to RGB mode before saving as JPEG
+                if self.current_image.mode == "RGBA":
+                    rgb_image = self.current_image.convert("RGB")
+                    rgb_image.save(file_path, "JPEG")
+                else:
+                    self.current_image.save(file_path, "JPEG")
+
                 messagebox.showinfo("Save Successful", "Data saved successfully.")
             except Exception as e:
+                print(f"Error: {str(e)}")
                 messagebox.showerror("Error", f"An error occurred while saving data: {str(e)}")
 
     def apply_text(self):
         self.watermark_text = self.watermark_text_entry.get("1.0", tk.END).strip()
         if self.watermark_text:
             selected_font_name = self.selected_font.get()
+            rotation_angle = self.rotation_entry.get()  # Get rotation angle from Entry field
             print(f"applied font name: {selected_font_name}")
             try:
                 new_font_size = int(self.font_size_entry.get())
@@ -252,6 +284,9 @@ class WatermarkApp(tk.Tk):
                     messagebox.showerror("Error", "Font size must be greater than zero")
                     return
                 self.font_size = new_font_size
+
+                # Convert the rotation angle to integer
+                rotation_angle = int(rotation_angle)
 
                 # Print the opacity value
                 opacity_value = self.font_opacity_entry.get()
@@ -264,7 +299,7 @@ class WatermarkApp(tk.Tk):
 
             if selected_font_name:
                 try:
-                    self.watermark(selected_font_name, self.text_x, self.text_y)
+                    self.watermark(selected_font_name, self.text_x, self.text_y, rotation_angle)
                 except Exception as e:
                     print(str(e))
                     messagebox.showerror("Error", f"Font error: {str(e)}")
@@ -307,6 +342,16 @@ class WatermarkApp(tk.Tk):
         # Move the text right by a certain amount and reapply the text.
         self.text_x += int(self.move_increment_entry.get())  # Adjust the increment/decrement value as needed
         self.apply_text()
+
+    def rotate_clockwise(self):
+        rotation_angle = self.rotation_entry.get()
+        if rotation_angle:
+            self.apply_text()
+
+    def rotate_counterclockwise(self):
+        rotation_angle = self.rotation_entry.get()
+        if rotation_angle:
+            self.apply_text()
 
 
 if __name__ == "__main__":
