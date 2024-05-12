@@ -1,7 +1,6 @@
 from PIL import Image, ImageTk, ImageFont, ImageDraw
 import tkinter as tk
 from tkinter import filedialog, messagebox, font
-import os  # Import the os module to handle file paths
 import tkinter.colorchooser as colorchooser
 
 
@@ -43,10 +42,6 @@ class WatermarkApp(tk.Tk):
         self.font_options = font.families()  # Get all available fonts
         self.selected_font = tk.StringVar(value=FONTS[0])
 
-        self.fonts_directory = os.path.join(os.getcwd(), 'fonts')
-        # gets files out of the fonts directory and lists them
-        self.font_file_list = self.get_font_file_list()
-
         self.font_size = 50  # Default font size
         self.font_opacity = 0.6  # Default Opacity
         self.selected_font_color = "#FFFFFF"  # Default font color (white)
@@ -57,10 +52,6 @@ class WatermarkApp(tk.Tk):
         self.movement_increment = 10  # Default movement amount
 
         self.create_widgets()
-
-    def get_font_file_list(self):
-        font_files = os.listdir(self.fonts_directory)
-        return font_files
 
     def create_widgets(self):
         self.img_frame = tk.Frame(self, width=500, height=500, bg=self.button_bg_color)
