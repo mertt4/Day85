@@ -27,7 +27,7 @@ class WatermarkApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Watermark App")
-        self.geometry('900x600')
+        self.geometry('900x650')
 
         # Set dark color scheme
         self.configure(bg='#222831')  # Dark gray background for the window
@@ -47,9 +47,14 @@ class WatermarkApp(tk.Tk):
         # gets files out of the fonts directory and lists them
         self.font_file_list = self.get_font_file_list()
 
-        self.font_size = 30  # Default font size
+        self.font_size = 50  # Default font size
         self.font_opacity = 0.6  # Default Opacity
         self.selected_font_color = "#FFFFFF"  # Default font color (white)
+
+        # New properties for text position
+        self.text_x = 0
+        self.text_y = 0
+        self.movement_increment = 10  # Default movement amount
 
         self.create_widgets()
 
@@ -114,13 +119,38 @@ class WatermarkApp(tk.Tk):
                                            bg=self.button_bg_color, fg=self.button_fg_color)
         self.font_color_button.grid(row=8, column=1, padx=5, pady=5)
 
+        # Buttons for moving text
+        self.move_up_button = tk.Button(self, text="Up", command=self.move_text_up,
+                                        bg=self.button_bg_color, fg=self.button_fg_color)
+        self.move_up_button.grid(row=9, column=0, padx=5, pady=5)
+
+        self.move_down_button = tk.Button(self, text="Down", command=self.move_text_down,
+                                          bg=self.button_bg_color, fg=self.button_fg_color)
+        self.move_down_button.grid(row=9, column=1, padx=5, pady=5)
+
+        self.move_left_button = tk.Button(self, text="Left", command=self.move_text_left,
+                                          bg=self.button_bg_color, fg=self.button_fg_color)
+        self.move_left_button.grid(row=9, column=2, padx=5, pady=5)
+
+        self.move_right_button = tk.Button(self, text="Right", command=self.move_text_right,
+                                           bg=self.button_bg_color, fg=self.button_fg_color)
+        self.move_right_button.grid(row=9, column=3, padx=5, pady=5)
+
+        self.move_increment_label = tk.Label(self, text="Movement Increment (pixels):",
+                                             bg=self['bg'], fg=self.label_fg_color)
+        self.move_increment_label.grid(row=10, column=0, padx=5, pady=5)
+
+        self.move_increment_entry = tk.Entry(self, bg=self.text_bg_color, fg=self.label_fg_color)
+        self.move_increment_entry.grid(row=10, column=1, padx=5, pady=5)
+        self.move_increment_entry.insert(0, self.movement_increment)
+
     def select_font_color(self):
         color = colorchooser.askcolor(title="Select Font Color")[1]  # Get the selected color
         if color:
             self.font_color_button.config(bg=color)  # Update the button color to show the color selected
             self.selected_font_color = color
 
-    def watermark(self, selected_font):
+    def watermark(self, selected_font, x, y):
         if self.image_path is None:
             messagebox.showerror("Error", "No image loaded.")
             return
@@ -136,7 +166,6 @@ class WatermarkApp(tk.Tk):
             return
 
         chosen_font_name = FONT_MAPPING.get(selected_font.lower())
-        print(f"Chosen font name: {chosen_font_name}")
         if chosen_font_name:
             try:
                 chosen_font = ImageFont.truetype(chosen_font_name, font_size)
@@ -155,9 +184,9 @@ class WatermarkApp(tk.Tk):
         text_width = text_bbox[2] - text_bbox[0]
         text_height = text_bbox[3] - text_bbox[1]
 
-        image_width, image_height = image.size
-        x = (image_width - text_width) // 2
-        y = (image_height - text_height) // 2
+        # Calculate the final position based on the provided x and y coordinates
+        x_final = x
+        y_final = y
 
         # Convert opacity value to alpha value (0-255)
         opacity = int(float(self.font_opacity_entry.get()) * 255)
@@ -168,7 +197,7 @@ class WatermarkApp(tk.Tk):
         txt_draw = ImageDraw.Draw(txt_img)
 
         # Draw the text on the new image with the adjusted alpha value
-        txt_draw.text((x, y), self.watermark_text, fill=text_color, font=chosen_font)
+        txt_draw.text((x_final, y_final), self.watermark_text, fill=text_color, font=chosen_font)
 
         # Blend the text image with the original image using alpha compositing
         image = Image.alpha_composite(image, txt_img)
@@ -227,6 +256,7 @@ class WatermarkApp(tk.Tk):
                 # Print the opacity value
                 opacity_value = self.font_opacity_entry.get()
                 print(f"Opacity Value: {opacity_value}")
+                print(f"X: {self.text_x},\nY: {self.text_y}")
 
             except ValueError:
                 messagebox.showerror("Error", "Invalid font size. Please enter a valid integer.")
@@ -234,7 +264,7 @@ class WatermarkApp(tk.Tk):
 
             if selected_font_name:
                 try:
-                    self.watermark(selected_font_name)
+                    self.watermark(selected_font_name, self.text_x, self.text_y)
                 except Exception as e:
                     print(str(e))
                     messagebox.showerror("Error", f"Font error: {str(e)}")
@@ -250,6 +280,33 @@ class WatermarkApp(tk.Tk):
         photo = ImageTk.PhotoImage(image)
         self.img_label.config(image=photo)
         self.img_label.image = photo
+
+        # Get the dimensions of the loaded image
+        image_width, image_height = image.size
+
+        # Calculate the center of the image
+        self.text_x = image_width // 2
+        self.text_y = image_height // 2
+
+    def move_text_up(self):
+        # Move the text up by a certain amount and reapply the text.
+        self.text_y -= int(self.move_increment_entry.get())  # Adjust the increment/decrement value as needed
+        self.apply_text()
+
+    def move_text_down(self):
+        # Move the text down by a certain amount and reapply the text.
+        self.text_y += int(self.move_increment_entry.get())  # Adjust the increment/decrement value as needed
+        self.apply_text()
+
+    def move_text_left(self):
+        # Move the text left by a certain amount and reapply the text.
+        self.text_x -= int(self.move_increment_entry.get())  # Adjust the increment/decrement value as needed
+        self.apply_text()
+
+    def move_text_right(self):
+        # Move the text right by a certain amount and reapply the text.
+        self.text_x += int(self.move_increment_entry.get())  # Adjust the increment/decrement value as needed
+        self.apply_text()
 
 
 if __name__ == "__main__":
